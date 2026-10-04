@@ -39,10 +39,30 @@
  },
  "$id": "https://github.com/cryptonomicsed-byte/card-protocol/schema/business-card.schema.json",
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "description": "A versioned, hash-chained, agent-readable business identity card. JSON keys: offerings/policies (plural); Markdown sections read Offer/Policy.",
+ "allOf": [
+  {
+   "description": "tier_hashes is mandatory for business-card/0.2 cards. 0.1 cards (or cards without a format discriminator) validate without it.",
+   "if": {
+    "properties": {
+     "format": {
+      "const": "business-card/0.2"
+     }
+    },
+    "required": [
+     "format"
+    ]
+   },
+   "then": {
+    "required": [
+     "tier_hashes"
+    ]
+   }
+  }
+ ],
+ "description": "A versioned, hash-chained, agent-readable business identity card. Covers business-card/0.1 and business-card/0.2; the `format` discriminator (supplied by the parser from frontmatter, validation metadata only) gates 0.2 requirements. JSON keys: offerings/policies (plural); Markdown sections read Offer/Policy.",
  "properties": {
   "acting_hash": {
-   "description": "SHA-256 of the canonical Acting layer (sections 1-9).",
+   "description": "SHA-256 of the canonical Acting layer: the locked seven-key set (identity, voice, offerings, operations, policies, handoff, knowledge). See tier-annex-0.2 \u00a715 R1.",
    "pattern": "^[0-9a-f]{64}$",
    "type": "string"
   },
@@ -71,6 +91,45 @@
     "type": "object"
    },
    "type": "array"
+  },
+  "created_at": {
+   "format": "date-time",
+   "type": "string"
+  },
+  "field_provenance": {
+   "additionalProperties": {
+    "properties": {
+     "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     "extracted_at": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "extractor_agent": {
+      "type": "string"
+     },
+     "sources": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "type": "object"
+   },
+   "description": "Implementation key (spec prose: Provenance section). Field-keyed provenance records.",
+   "type": "object"
+  },
+  "format": {
+   "description": "Supplied by the parser from CARD.md frontmatter for validation only. Not part of the canonical card: validators MUST strip it before canonicalization/hashing. Gates 0.2 requirements via the allOf conditional below.",
+   "enum": [
+    "business-card/0.1",
+    "business-card/0.2"
+   ],
+   "type": "string"
   },
   "handoff": {
    "additionalProperties": true,
@@ -133,6 +192,41 @@
    ],
    "type": "object"
   },
+  "infrastructure": {
+   "additionalProperties": true,
+   "description": "Where the card's agent runs. Operator knowledge; authorized tier. No secrets \u2014 credentials live in the vault, never here.",
+   "properties": {
+    "deployments": {
+     "items": {
+      "additionalProperties": true,
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "provider": {
+        "type": "string",
+        "description": "Free-form operator label."
+       },
+       "region": {
+        "type": "string"
+       },
+       "sandbox": {
+        "type": "string",
+        "description": "Sandbox substrate label, e.g. docker+gvisor, openshell."
+       }
+      },
+      "required": [
+       "id",
+       "provider",
+       "sandbox"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
   "knowledge": {
    "items": {
     "properties": {
@@ -149,6 +243,52 @@
     "type": "object"
    },
    "type": "array"
+  },
+  "networks": {
+   "additionalProperties": true,
+   "description": "How the outside world reaches the card's agent, keyed by purpose. Private keys MUST NEVER appear anywhere in this map.",
+   "properties": {
+    "voice": {
+     "additionalProperties": true,
+     "description": "Voice-call pointer. Shape mirrors the verified Meshenger contact JSON. networks.voice is public tier.",
+     "properties": {
+      "addresses": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "description": "Dialable addresses (Meshenger: TCP 10001)."
+      },
+      "protocol": {
+       "type": "string",
+       "description": "\"meshenger\" is the 0.2-defined voice protocol."
+      },
+      "public_key": {
+       "type": "string",
+       "pattern": "^[0-9a-f]+$",
+       "description": "Hex ed25519 identity proof. Public by design."
+      },
+      "visibility": {
+       "type": "string",
+       "enum": [
+        "public",
+        "authorized"
+       ],
+       "default": "public"
+      }
+     },
+     "propertyNames": {
+      "pattern": "^(?!.*private_key).*$"
+     },
+     "required": [
+      "protocol",
+      "public_key",
+      "addresses"
+     ],
+     "type": "object"
+    }
+   },
+   "type": "object"
   },
   "offerings": {
    "items": {
@@ -247,9 +387,29 @@
     "live"
    ]
   },
-  "created_at": {
-   "format": "date-time",
-   "type": "string"
+  "tier_hashes": {
+   "additionalProperties": false,
+   "description": "SHA-256 of each tier view's canonical PLAINTEXT JSON (tier-annex-0.2 \u00a76). Mandatory when format is business-card/0.2.",
+   "properties": {
+    "authorized": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    },
+    "owner": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    },
+    "public": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{64}$"
+    }
+   },
+   "required": [
+    "public",
+    "authorized",
+    "owner"
+   ],
+   "type": "object"
   },
   "version": {
    "minimum": 1,
@@ -302,33 +462,6 @@
     }
    },
    "type": "object"
-  },
-  "field_provenance": {
-   "type": "object",
-   "description": "Implementation key (spec prose: Provenance section). Field-keyed provenance records.",
-   "additionalProperties": {
-    "type": "object",
-    "properties": {
-     "sources": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
-     },
-     "extractor_agent": {
-      "type": "string"
-     },
-     "extracted_at": {
-      "type": "string",
-      "format": "date-time"
-     }
-    }
-   }
   }
  },
  "required": [
@@ -339,6 +472,6 @@
   "status",
   "identity"
  ],
- "title": "business-card/0.1",
+ "title": "business-card",
  "type": "object"
 }
