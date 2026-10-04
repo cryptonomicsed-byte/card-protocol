@@ -1,5 +1,9 @@
 # Errata — `business-card/0.1`
 
+> **Superseded by `tier-annex-0.2.md` §15**, which locks the normative 0.2
+> resolutions. This file is retained as the historical record of what was
+> open in 0.1.
+
 ## Acting-layer key set (open, resolves in 0.2)
 
 `business-card-spec.md` defines the Acting layer as sections 1–9 (Identity, Voice, Sound, Offer, Operations, Policy, Handoff, Knowledge, Provenance).
