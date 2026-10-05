@@ -213,13 +213,23 @@ test("conformance fixture validates against schema", () => {
   assert.equal(ok, true, "schema errors: " + JSON.stringify(validate.errors, null, 2));
 });
 
-test("test CARD validates against schema", () => {
+test("minimal valid card validates against schema", () => {
   const ajv = new Ajv({ strict: false });
   addFormats(ajv);
   const validate = ajv.compile(schema);
-  // hash is required by schema; the CARD const omits it (computed at emit time),
-  // so supply the known-correct value for schema validation.
-  const cardWithHash = { ...CARD, hash: PY_HASH };
-  const ok = validate(cardWithHash);
+  // Minimal card satisfying all schema requirements (required fields + minItems constraints).
+  const minimal = {
+    id: "dna_schema_test",
+    version: 1,
+    hash: "a".repeat(64),
+    acting_hash: "b".repeat(64),
+    status: "draft",
+    previous_version: null,
+    identity: { name: "Test Business" },
+    voice: {
+      sample_phrases: ["Come on in.", "Fresh daily.", "Baked this morning."],
+    },
+  };
+  const ok = validate(minimal);
   assert.equal(ok, true, "schema errors: " + JSON.stringify(validate.errors, null, 2));
 });
