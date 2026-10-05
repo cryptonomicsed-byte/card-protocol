@@ -1,5 +1,5 @@
 /**
- * CARD.md — business-card/0.1 emitter.
+ * CARD.md — business-card/0.2 emitter.
  *
  * The card is the product: a markdown file any agent can read cold.
  * Sections, in order: Identity, Voice, Sound, Offer, Operations, Policy,
@@ -133,7 +133,7 @@ export function emitCardMd(card: any, changelog: string[]): string {
   const hash = cardHash({ ...card, acting_hash: ahash });
 
   const fm: Array<[string, string]> = [
-    ["format", "business-card/0.1"],
+    ["format", "business-card/0.2"],
     ["id", card.id],
     ["version", String(card.version)],
   ];

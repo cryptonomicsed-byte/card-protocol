@@ -1,5 +1,5 @@
 /**
- * card-md-parse — parse CARD.md (business-card/0.1) back into the machine
+ * card-md-parse — parse CARD.md (business-card/0.2) back into the machine
  * view (card JSON) + changelog. Mirror image of card-md's emitCardMd:
  * every line written there is read back here.
  *
@@ -213,7 +213,7 @@ function parseOffer(b: string): any {
 
 export function parseCardMd(md: string): ParsedCardMd {
   const { fm, rest } = parseFrontmatter(md);
-  if (fm.format !== "business-card/0.1")
+  if (fm.format !== "business-card/0.2" && fm.format !== "business-card/0.1")
     throw new Error(`CARD.md: unsupported format '${fm.format}'`);
   const sec = sections(rest);
   const card: any = {};

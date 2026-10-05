@@ -1,5 +1,5 @@
 /**
- * CARD.md (business-card/0.1) round-trip tests. Run: npm test
+ * CARD.md (business-card/0.2) round-trip tests. Run: npm test
  *
  * PY_HASH / PY_ACTING_HASH were computed by the Python swarm's own
  * canonicalizer (json.dumps(sort_keys=True, separators=(",",":")), ensure_ascii).
@@ -8,9 +8,14 @@
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const path = require("path");
 const { canonicalJson, cardHash } = require("../business-md");
 const { emitCardMd, actingHash } = require("../card-md");
 const { parseCardMd, verifyCardMd } = require("../card-md-parse");
+const Ajv = require("ajv/dist/2020");
+const addFormats = require("ajv-formats");
+const schema = require("../../../../schema/business-card.schema.json");
+const conformanceFixture = require("../../../../conformance/fixtures/minimal-card.json");
 
 const PY_HASH = "b106a05d0cccd45bfa836d58e29247ef082b4a6c974ddd26bd99b3d459f836bc";
 const PY_ACTING_HASH = "38b4033a969612265050d866ebd83d32b327ee39ce68b89a4c4da8aba05ba3e7";
@@ -99,7 +104,7 @@ test("round-trip: md -> JSON equals the card, both hashes verified", () => {
   const p = parseCardMd(md);
   assert.equal(canonicalJson(stripMeta(p.card)), canonicalJson(stripMeta(CARD)));
   assert.deepEqual(p.changelog, CHANGELOG);
-  assert.equal(p.frontmatter.format, "business-card/0.1");
+  assert.equal(p.frontmatter.format, "business-card/0.2");
   assert.equal(p.frontmatter.previous_hash, "none");
   assert.equal(p.frontmatter.hash, "sha256:" + PY_HASH);
   assert.equal(p.frontmatter.acting_hash, "sha256:" + PY_ACTING_HASH);
@@ -198,4 +203,23 @@ test("sound states follow asset existence", () => {
   const md = emitCardMd(c, CHANGELOG);
   assert.match(md, /voice_logo: \{state: ready/);
   assert.match(md, /logo: \{state: staged\}/);
+});
+
+test("conformance fixture validates against schema", () => {
+  const ajv = new Ajv({ strict: false });
+  addFormats(ajv);
+  const validate = ajv.compile(schema);
+  const ok = validate(conformanceFixture);
+  assert.equal(ok, true, "schema errors: " + JSON.stringify(validate.errors, null, 2));
+});
+
+test("test CARD validates against schema", () => {
+  const ajv = new Ajv({ strict: false });
+  addFormats(ajv);
+  const validate = ajv.compile(schema);
+  // hash is required by schema; the CARD const omits it (computed at emit time),
+  // so supply the known-correct value for schema validation.
+  const cardWithHash = { ...CARD, hash: PY_HASH };
+  const ok = validate(cardWithHash);
+  assert.equal(ok, true, "schema errors: " + JSON.stringify(validate.errors, null, 2));
 });

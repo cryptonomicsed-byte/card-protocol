@@ -50,7 +50,8 @@ def canonical_hash(card: dict) -> str:
     return hashlib.sha256(canonical_json(card).encode()).hexdigest()
 
 
-#: Card-level keys that form the acting (quotable) layer of business-card/0.1.
+#: Card-level keys that form the acting (quotable) layer of business-card/0.2.
+#: voice.sonic is included via the voice key. field_provenance excluded.
 #: Must match ACTING_KEYS in the TypeScript compiler's card-md.ts exactly.
 ACTING_KEYS = (
     "identity",
