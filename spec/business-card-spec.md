@@ -102,7 +102,7 @@ Rules:
 A list. Each row: `name`, `kind`, `orderable`, `price` (number or null), `confidence`. Null price is allowed. A made-up price is not — the agent refuses and hands off.
 
 ### Operations
-`hours`, `channels`, `delivery_fence`, `catering`, and `human_confirm` (acts requiring a human).
+`hours`, `channels`, `delivery_fence`, `catering`, `human_confirm` (acts requiring a human), `response_sla` (how quickly the agent promises to reply, e.g. `"within 24 hours"`), and `pipeline_stages` (the ordered stages a lead moves through, e.g. `["new","contacted","booked"]`). Both are part of the acting layer, so changing either moves `acting_hash`.
 
 ### Policy
 refunds, cancellations, allergens, alcohol, promises the agent must not make. Empty means hand off, not guess.
